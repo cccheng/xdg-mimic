@@ -8,11 +8,23 @@ LAUNCHER_OVERRIDE=""
 # default app exists. The default app is listed first; Esc also opens it.
 # A choice made in this mode is not saved as the new default.
 # Examples: ALWAYS_ASK=("*")  or  ALWAYS_ASK=("image/*" "video/*" "application/pdf")
+# For a single call, run: xdg-open --ask FILE  (needs the xdg-open wrapper)
 ALWAYS_ASK=()
 
 # Ask only when the caller is xdg-open, so other xdg-mime users stay silent.
 should_ask() {
-    [[ "$(cat "/proc/$PPID/comm" 2>/dev/null)" == "xdg-open" ]] || return 1
+    local pid=$PPID
+    [[ "$(cat "/proc/$pid/comm" 2>/dev/null)" == "xdg-open" ]] || return 1
+    # "xdg-open --ask" sets XDG_MIMIC_ASK to the PID of that xdg-open. We can
+    # run in a subshell of it, so check each xdg-open ancestor. Apps that it
+    # opens inherit the variable, but their own xdg-open calls do not match.
+    if [[ -n "$XDG_MIMIC_ASK" ]]; then
+        while [[ "$(cat "/proc/$pid/comm" 2>/dev/null)" == "xdg-open" ]]; do
+            [[ "$pid" == "$XDG_MIMIC_ASK" ]] && return 0
+            pid=$(awk '/^PPid:/ { print $2 }' "/proc/$pid/status" 2>/dev/null)
+            [[ -n "$pid" ]] || break
+        done
+    fi
     local pat
     for pat in "${ALWAYS_ASK[@]}"; do
         [[ "$1" == $pat ]] && return 0
