@@ -26,6 +26,18 @@ LAUNCHER_OVERRIDE=""
 ```
 By default, the script will automatically scan your system and pick the best available launcher. If you have multiple installed, you can force your preferred one by typing its name in the quotes!
 
+### Always show the menu
+
+By default, the menu only appears when the default app is missing. To pick an app every time, even for known files, list MIME type globs in `ALWAYS_ASK`:
+
+```bash
+ALWAYS_ASK=("image/*" "video/*" "application/pdf")
+```
+
+The current default app is listed first, so Enter or Esc opens it as usual. A choice made from this menu is not saved as the new default.
+
+The menu only appears when `xdg-open` is the caller. Other programs that query `xdg-mime` still get the default app silently. Note that `"*"` also matches `x-scheme-handler/*`, so every link you click will ask too.
+
 ## 🚀 Installation
 
 Simply download the script, name it `xdg-mime`, and place it somewhere in your `$PATH` that takes priority over `/usr/bin/` (like `~/.local/bin/`).
